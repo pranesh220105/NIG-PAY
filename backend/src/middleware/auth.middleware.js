@@ -10,16 +10,24 @@ function auth(req, res, next) {
     }
 
     const token = parts[1];
-    const payload = jwt.verify(token, process.env.JWT_SECRET || "dev_secret");
+    const payload = jwt.verify(token, process.env.JWT_SECRET || "secret");
 
-    // payload should have: { id, email, role }
-    if (!payload?.id) {
+    const userId = payload?.id ?? payload?.userId;
+    if (!userId) {
       return res.status(401).json({ message: "Invalid token payload" });
     }
 
-    req.user = payload;
+    req.user = {
+      id: Number(userId),
+      email: payload.email,
+      role: payload.role,
+      exp: payload.exp,
+    };
     next();
   } catch (e) {
+    if (e?.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired" });
+    }
     return res.status(401).json({ message: "Invalid token" });
   }
 }

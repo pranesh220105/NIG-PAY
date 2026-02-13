@@ -51,7 +51,7 @@ class _HistoryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.black.withOpacity(0.06)),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.06)),
       ),
       child: ListTile(
         leading: Container(
@@ -59,7 +59,7 @@ class _HistoryCard extends StatelessWidget {
           width: 44,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: Colors.green.withOpacity(0.12),
+            color: Colors.green.withValues(alpha: 0.12),
           ),
           child: const Icon(Icons.receipt_long_rounded, color: Colors.green),
         ),
@@ -78,3 +78,4 @@ class _HistoryCard extends StatelessWidget {
     );
   }
 }
+

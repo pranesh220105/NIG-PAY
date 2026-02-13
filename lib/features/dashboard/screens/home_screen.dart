@@ -81,7 +81,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const PaymentScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => PaymentScreen(pendingAmount: pendingFees.toInt()),
+                  ),
                 );
               },
             ),
@@ -153,7 +155,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const PaymentScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => PaymentScreen(pendingAmount: pendingFees.toInt()),
+                      ),
                     );
                   },
                 ),

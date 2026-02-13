@@ -128,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           // ✅ Role (backend requires it)
                           DropdownButtonFormField<String>(
-                            value: role,
+                            initialValue: role,
                             items: const [
                               DropdownMenuItem(value: "STUDENT", child: Text("Student")),
                               DropdownMenuItem(value: "ADMIN", child: Text("Admin")),
@@ -231,3 +231,4 @@ class _LoginScreenState extends State<LoginScreen> {
   // ✅ avoid deprecated withOpacity()
   Color _op(Color c, double opacity) => c.withAlpha((opacity * 255).round());
 }
+

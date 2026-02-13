@@ -47,7 +47,7 @@ class _StudentRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.black.withOpacity(0.06)),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.06)),
       ),
       child: ListTile(
         leading: Container(
@@ -55,7 +55,7 @@ class _StudentRow extends StatelessWidget {
           width: 44,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: pendingColor.withOpacity(0.12),
+            color: pendingColor.withValues(alpha: 0.12),
           ),
           child: Icon(Icons.person_rounded, color: pendingColor),
         ),
@@ -65,7 +65,7 @@ class _StudentRow extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text("Pending", style: TextStyle(fontSize: 12, color: Colors.black.withOpacity(0.6))),
+            Text("Pending", style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.6))),
             const SizedBox(height: 4),
             Text(
               "₹ $pending",
@@ -77,3 +77,4 @@ class _StudentRow extends StatelessWidget {
     );
   }
 }
+

@@ -1,10 +1,14 @@
 const express = require("express");
 const router = express.Router();
+const { auth } = require("../middleware/auth.middleware");
+const {
+  getStudentDashboard,
+  getStudentPayments,
+  makePayment,
+} = require("../controllers/student.controller");
 
-// ✅ Correct path (routes folder -> controllers folder)
-const { getStudentDashboard } = require("../controllers/student.controller");
-
-// ✅ GET /api/student/dashboard
-router.get("/dashboard", getStudentDashboard);
+router.get("/dashboard", auth, getStudentDashboard);
+router.get("/payments", auth, getStudentPayments);
+router.post("/pay", auth, makePayment);
 
 module.exports = router;

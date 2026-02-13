@@ -51,7 +51,7 @@ class StudentHistoryScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
       ),
       child: Row(
         children: [
@@ -78,7 +78,7 @@ class StudentHistoryScreen extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   date,
-                  style: TextStyle(fontSize: 12, color: Colors.black.withOpacity(0.60)),
+                  style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.60)),
                 ),
               ],
             ),
@@ -103,3 +103,4 @@ class StudentHistoryScreen extends StatelessWidget {
     );
   }
 }
+

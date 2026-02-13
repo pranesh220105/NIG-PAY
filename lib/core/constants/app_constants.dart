@@ -1,22 +1,27 @@
-// lib/core/constants/app_constants.dart
-
 class AppConstants {
   AppConstants._();
 
-  // ✅ NGROK BASE URL
-  static const String baseUrl =
-      "https://wayne-maintainable-tennille.ngrok-free.dev";
+  static const String _defaultDevBaseUrl = "https://wayne-maintainable-tennille.ngrok-free.dev";
+  static const String _defaultProdBaseUrl = "https://college-fee-wallet-api.onrender.com";
+  static const String _env = String.fromEnvironment("APP_ENV", defaultValue: "dev");
+  static const String _devBaseUrl = String.fromEnvironment("DEV_BASE_URL", defaultValue: _defaultDevBaseUrl);
+  static const String _prodBaseUrl = String.fromEnvironment("PROD_BASE_URL", defaultValue: _defaultProdBaseUrl);
+
+  static String get baseUrl => _env == "prod" ? _prodBaseUrl : _devBaseUrl;
 
   static Uri uri(String path) => Uri.parse("$baseUrl$path");
 
-  // ✅ AUTH (your backend log shows /auth/login)
-  static const String login = "/auth/login";
-  static const String register = "/auth/register";
+  static const String login = "/api/auth/login";
+  static const String register = "/api/auth/register";
+  static const String legacyLogin = "/auth/login";
+  static const String legacyRegister = "/auth/register";
 
-  // ✅ STUDENT
   static const String studentDashboard = "/api/student/dashboard";
+  static const String studentPayments = "/api/student/payments";
+  static const String makePayment = "/api/student/pay";
 
-  // ✅ ADMIN (added because your admin_add_fee_screen expects addFee)
-  // If your backend route differs, change only this string.
   static const String addFee = "/api/admin/fee/add";
+  static const String adminCreateStudent = "/api/admin/students";
+  static const String adminSetSemesterFee = "/api/admin/fee/semester";
+  static const String adminMarkFee = "/api/admin/fee/mark";
 }

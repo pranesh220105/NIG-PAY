@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: college-fee-wallet-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install && npm run render-build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: college-fee-wallet-db
+          property: connectionString
+
+databases:
+  - name: college-fee-wallet-db
+    plan: free

@@ -1,9 +1,8 @@
-// lib/features/dashboard/student_shell.dart
-
 import 'package:flutter/material.dart';
 
-import '../auth/login_screen.dart';
 import '../../core/services/auth_service.dart';
+import '../auth/login_screen.dart';
+import '../history/screens/history_screen.dart';
 import 'screens/student_home_screen.dart';
 import 'screens/student_profile_screen.dart';
 
@@ -17,11 +16,9 @@ class StudentShell extends StatefulWidget {
 class _StudentShellState extends State<StudentShell> {
   int index = 0;
 
-  late final List<Widget> pages = const [
-    StudentHomeScreen(),
-    _StudentHistoryPlaceholder(),
-    StudentProfileScreen(),
-  ];
+  void _openHistoryTab() {
+    setState(() => index = 1);
+  }
 
   Future<void> _logout() async {
     await AuthService.logout();
@@ -34,24 +31,29 @@ class _StudentShellState extends State<StudentShell> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = <Widget>[
+      StudentHomeScreen(onOpenHistory: _openHistoryTab),
+      const HistoryScreen(),
+      const StudentProfileScreen(),
+    ];
+
     return Scaffold(
-      body: pages[index],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        child: KeyedSubtree(
+          key: ValueKey(index),
+          child: pages[index],
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (i) => setState(() => index = i),
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_rounded),
-            label: "Dashboard",
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_rounded),
-            label: "History",
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_rounded),
-            label: "Profile",
-          ),
+          NavigationDestination(icon: Icon(Icons.dashboard_rounded), label: "Dashboard"),
+          NavigationDestination(icon: Icon(Icons.receipt_long_rounded), label: "History"),
+          NavigationDestination(icon: Icon(Icons.person_rounded), label: "Profile"),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -61,26 +63,4 @@ class _StudentShellState extends State<StudentShell> {
       ),
     );
   }
-}
-
-class _StudentHistoryPlaceholder extends StatelessWidget {
-  const _StudentHistoryPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Text(
-          "History Screen (Next)",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            color: _op(Colors.black, 0.7),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Color _op(Color c, double o) => c.withAlpha((o * 255).round());
 }

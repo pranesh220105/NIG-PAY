@@ -13,7 +13,13 @@ class StudentDashboardScreen extends StatefulWidget {
 class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   bool loading = true;
   String? error;
-  StudentDashboard data = const StudentDashboard(totalFee: 0, paidFee: 0, pendingFee: 0);
+  StudentDashboard data = const StudentDashboard(
+    totalFee: 0,
+    paidFee: 0,
+    pendingFee: 0,
+    totalFineDue: 0,
+    semesterBreakdown: [],
+  );
 
   @override
   void initState() {
@@ -57,10 +63,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             // Top header
             Row(
               children: [
-                Expanded(
+                const Expanded(
                   child: Text(
                     "Student Dashboard",
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                   ),
                 ),
                 IconButton(
@@ -99,7 +105,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                     const SizedBox(height: 18),
 
                     // Actions (Buttons working)
-                    Text("Quick Actions", style: TextStyle(fontWeight: FontWeight.w800, color: Colors.black.withOpacity(0.75))),
+                    Text("Quick Actions", style: TextStyle(fontWeight: FontWeight.w800, color: Colors.black.withValues(alpha: 0.75))),
                     const SizedBox(height: 10),
 
                     _ActionButton(
@@ -160,7 +166,7 @@ class _StatCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(22),
-        side: BorderSide(color: Colors.black.withOpacity(0.06)),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.06)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -171,7 +177,7 @@ class _StatCard extends StatelessWidget {
               width: 44,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
               ),
               child: Icon(icon),
             ),
@@ -180,7 +186,7 @@ class _StatCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(color: Colors.black.withOpacity(0.6), fontWeight: FontWeight.w700)),
+                  Text(title, style: TextStyle(color: Colors.black.withValues(alpha: 0.6), fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   Text("₹ $value", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
                 ],
@@ -212,11 +218,11 @@ class _BigStatCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            cs.primary.withOpacity(0.18),
-            cs.primaryContainer.withOpacity(0.28),
+            cs.primary.withValues(alpha: 0.18),
+            cs.primaryContainer.withValues(alpha: 0.28),
           ],
         ),
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
       ),
       child: Row(
         children: [
@@ -225,7 +231,7 @@ class _BigStatCard extends StatelessWidget {
             width: 52,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
             child: Icon(icon),
           ),
@@ -234,11 +240,11 @@ class _BigStatCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(color: Colors.black.withOpacity(0.65), fontWeight: FontWeight.w800)),
+                Text(title, style: TextStyle(color: Colors.black.withValues(alpha: 0.65), fontWeight: FontWeight.w800)),
                 const SizedBox(height: 6),
                 Text("₹ $value", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(color: Colors.black.withOpacity(0.6))),
+                Text(subtitle, style: TextStyle(color: Colors.black.withValues(alpha: 0.6))),
               ],
             ),
           ),
@@ -273,7 +279,7 @@ class _ActionButton extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           color: Colors.white,
-          border: Border.all(color: Colors.black.withOpacity(0.06)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
         ),
         child: Row(
           children: [
@@ -282,7 +288,7 @@ class _ActionButton extends StatelessWidget {
               width: 46,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
               ),
               child: Icon(icon, color: color),
             ),
@@ -293,7 +299,7 @@ class _ActionButton extends StatelessWidget {
                 children: [
                   Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
                   const SizedBox(height: 3),
-                  Text(subtitle, style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 12)),
+                  Text(subtitle, style: TextStyle(color: Colors.black.withValues(alpha: 0.6), fontSize: 12)),
                 ],
               ),
             ),
@@ -329,3 +335,4 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
+

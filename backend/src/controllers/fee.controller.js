@@ -53,4 +53,46 @@ async function getAllFees(req, res) {
   }
 }
 
-module.exports = { createFee, getMyFees, getAllFees };
+async function addFeeByStudentEmail(req, res) {
+  try {
+    const { studentEmail, amount, title, description, semester, dueDate, fineAmount } = req.body;
+    if (!studentEmail || amount === undefined) {
+      return res.status(400).json({ message: "studentEmail and amount are required" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: String(studentEmail).trim() },
+    });
+    if (!user) return res.status(404).json({ message: "Student not found" });
+    if (String(user.role).toUpperCase() !== "STUDENT") {
+      return res.status(400).json({ message: "Fee can only be added for STUDENT users" });
+    }
+
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ message: "Amount must be greater than 0" });
+    }
+
+    const fee = await prisma.fee.create({
+      data: {
+        userId: user.id,
+        title: title ? String(title) : semester ? `${String(semester)} Fee` : "Fee",
+        amount: numericAmount,
+        description: JSON.stringify({
+          note: description ? String(description) : null,
+          semester: semester ? String(semester) : "General",
+          dueDate: dueDate ? String(dueDate) : null,
+          fineAmount: Number(fineAmount || 0),
+        }),
+        status: "PENDING",
+      },
+    });
+
+    return res.status(201).json({ message: "Fee added", fee });
+  } catch (e) {
+    console.log("addFeeByStudentEmail error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+module.exports = { createFee, getMyFees, getAllFees, addFeeByStudentEmail };

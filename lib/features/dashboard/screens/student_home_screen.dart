@@ -1,345 +1,151 @@
-// lib/features/dashboard/screens/student_home_screen.dart
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../../../core/constants/app_constants.dart';
-import '../../../core/services/api_service.dart';
+import '../../../core/state/view_state.dart';
+import '../../payments/screens/payment_screen.dart';
+import '../viewmodels/student_vm.dart';
 
 class StudentHomeScreen extends StatefulWidget {
-  const StudentHomeScreen({super.key});
+  final VoidCallback? onOpenHistory;
+  const StudentHomeScreen({super.key, this.onOpenHistory});
 
   @override
   State<StudentHomeScreen> createState() => _StudentHomeScreenState();
 }
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
-  bool loading = true;
-  String? error;
-
-  int totalFee = 0;
-  int paidFee = 0;
-  int pendingFee = 0;
-
   @override
   void initState() {
     super.initState();
-    _loadDashboard();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StudentVm>().loadDashboard();
+    });
   }
 
-  Future<void> _loadDashboard() async {
-    setState(() {
-      loading = true;
-      error = null;
-    });
-
-    try {
-      final res = await ApiService.get(AppConstants.studentDashboard, auth: true);
-
-      final Map<String, dynamic> json =
-          (res["data"] is Map<String, dynamic>) ? (res["data"] as Map<String, dynamic>) : res;
-
-      int toInt(dynamic v) => int.tryParse(v.toString()) ?? 0;
-
-      final t = toInt(json["totalFee"] ?? json["total"] ?? 0);
-      final p = toInt(json["paidFee"] ?? json["paid"] ?? 0);
-      final pend = toInt(json["pendingFee"] ?? json["pending"] ?? (t - p));
-
-      setState(() {
-        totalFee = t;
-        paidFee = p;
-        pendingFee = pend;
-        loading = false;
-      });
-    } catch (e) {
-      setState(() {
-        error = e.toString().replaceFirst("Exception: ", "");
-        loading = false;
-      });
-    }
+  Future<void> _openPay(int pendingFee) async {
+    if (pendingFee <= 0) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => PaymentScreen(pendingAmount: pendingFee)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<StudentVm>();
     final cs = Theme.of(context).colorScheme;
+    final dash = vm.dashboard;
 
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadDashboard,
+          onRefresh: vm.loadDashboard,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
             children: [
-              _HeaderCard(
-                title: "Student Dashboard",
-                subtitle: "Track your payments easily",
-                icon: Icons.school_rounded,
-                colorScheme: cs,
+              _TopStrip(colorScheme: cs),
+              const SizedBox(height: 14),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 240),
+                child: vm.dashboardState == ViewState.loading
+                    ? const _LoadingShell(key: ValueKey("loading"))
+                    : vm.dashboardState == ViewState.error
+                        ? _ErrorShell(
+                            key: const ValueKey("error"),
+                            message: vm.dashboardError ?? "Unable to load dashboard",
+                            onRetry: vm.loadDashboard,
+                          )
+                        : _BalanceShell(
+                            key: const ValueKey("data"),
+                            totalFee: dash.totalFee,
+                            paidFee: dash.paidFee,
+                            pendingFee: dash.pendingFee,
+                            fineDue: dash.totalFineDue,
+                            onPay: () => _openPay(dash.pendingFee),
+                          ),
               ),
               const SizedBox(height: 14),
-
-              if (loading) ...[
-                _skeletonCard(),
-                const SizedBox(height: 12),
-                _skeletonCard(),
-              ] else if (error != null) ...[
-                _ErrorCard(message: error!, onRetry: _loadDashboard),
-              ] else ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        title: "Total Fee",
-                        value: "₹$totalFee",
-                        icon: Icons.account_balance_wallet_rounded,
-                        color: cs.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        title: "Paid",
-                        value: "₹$paidFee",
-                        icon: Icons.verified_rounded,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ],
+              _QuickGrid(
+                onPay: () => _openPay(dash.pendingFee),
+                onHistory: () => widget.onOpenHistory?.call(),
+                onRefresh: vm.loadDashboard,
+              ),
+              if (dash.semesterBreakdown.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  "Semester Breakdown",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                 ),
-                const SizedBox(height: 12),
-                _BigStatCard(
-                  title: "Pending",
-                  value: "₹$pendingFee",
-                  subtitle: pendingFee > 0 ? "Pay before due date to avoid fine" : "No pending fees 🎉",
-                  color: Colors.orange,
+                const SizedBox(height: 10),
+                ...dash.semesterBreakdown.map(
+                  (s) => _SemesterCard(
+                    title: s.semester,
+                    paid: s.paid,
+                    pending: s.pending,
+                    fine: s.fineDue,
+                  ),
                 ),
               ],
-
-              const SizedBox(height: 16),
-              Text(
-                "Quick Actions",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: _op(Colors.black, 0.75),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              _ActionTile(
-                icon: Icons.payment_rounded,
-                title: "Pay Fees",
-                subtitle: "UPI / Card / Netbanking",
-                color: cs.primary,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Payment screen next ✅")),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              _ActionTile(
-                icon: Icons.history_rounded,
-                title: "Payment History",
-                subtitle: "View transactions",
-                color: cs.secondary,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("History screen next ✅")),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              _ActionTile(
-                icon: Icons.receipt_long_rounded,
-                title: "Receipts",
-                subtitle: "Download receipts",
-                color: cs.tertiary,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Receipts screen next ✅")),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 18),
-              Text(
-                "Tip: Pull down to refresh",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: _op(Colors.black, 0.5), fontSize: 12),
-              ),
             ],
           ),
         ),
       ),
     );
   }
-
-  Widget _skeletonCard() {
-    return Container(
-      height: 110,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: Colors.white,
-        border: Border.all(color: _op(Colors.black, 0.06)),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            height: 52,
-            width: 52,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: _op(Colors.black, 0.05),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(height: 12, decoration: BoxDecoration(color: _op(Colors.black, 0.05), borderRadius: BorderRadius.circular(8))),
-                const SizedBox(height: 10),
-                Container(height: 12, width: 160, decoration: BoxDecoration(color: _op(Colors.black, 0.05), borderRadius: BorderRadius.circular(8))),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  static Color _op(Color c, double o) => c.withAlpha((o * 255).round());
 }
 
-class _HeaderCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
+class _TopStrip extends StatelessWidget {
   final ColorScheme colorScheme;
-
-  const _HeaderCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.colorScheme,
-  });
+  const _TopStrip({required this.colorScheme});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            _op(colorScheme.primary, 0.20),
-            _op(colorScheme.primaryContainer, 0.25),
-            Colors.white,
-          ],
+    return Row(
+      children: [
+        Container(
+          height: 50,
+          width: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(colors: [colorScheme.primary, colorScheme.secondary]),
+          ),
+          child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white),
         ),
-        border: Border.all(color: _op(Colors.black, 0.06)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 56,
-            width: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              gradient: LinearGradient(colors: [colorScheme.primary, colorScheme.primaryContainer]),
-            ),
-            child: Icon(icon, color: Colors.white, size: 30),
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Fee Wallet", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              SizedBox(height: 2),
+              Text("Scan-friendly, payment-first dashboard", style: TextStyle(fontSize: 12)),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(color: _op(Colors.black, 0.6), fontSize: 12)),
-              ],
-            ),
-          ),
-          Icon(Icons.sync_rounded, color: _op(Colors.black, 0.45)),
-        ],
-      ),
+        ),
+      ],
     );
   }
-
-  Color _op(Color c, double o) => c.withAlpha((o * 255).round());
 }
 
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
+class _BalanceShell extends StatelessWidget {
+  final int totalFee;
+  final int paidFee;
+  final int pendingFee;
+  final int fineDue;
+  final VoidCallback onPay;
 
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
+  const _BalanceShell({
+    super.key,
+    required this.totalFee,
+    required this.paidFee,
+    required this.pendingFee,
+    required this.fineDue,
+    required this.onPay,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: Colors.white,
-        border: Border.all(color: _op(Colors.black, 0.06)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 46,
-            width: 46,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: _op(color, 0.12),
-            ),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(color: _op(Colors.black, 0.6), fontWeight: FontWeight.w800, fontSize: 12)),
-                const SizedBox(height: 6),
-                Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _op(Color c, double o) => c.withAlpha((o * 255).round());
-}
-
-class _BigStatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String subtitle;
-  final Color color;
-
-  const _BigStatCard({
-    required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -347,131 +153,214 @@ class _BigStatCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [_op(color, 0.18), _op(color, 0.08)],
+          colors: [cs.primary.withAlpha(36), cs.tertiary.withAlpha(30), Theme.of(context).cardColor],
         ),
-        border: Border.all(color: _op(Colors.black, 0.06)),
+        border: Border.all(color: Colors.black.withAlpha(16)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 54,
-            width: 54,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              color: Colors.white.withAlpha(235),
-            ),
-            child: Icon(Icons.pending_actions_rounded, color: color),
+          const Text("Outstanding", style: TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text("Rs $pendingFee", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: _Pill(label: "Total", value: "Rs $totalFee")),
+              const SizedBox(width: 8),
+              Expanded(child: _Pill(label: "Paid", value: "Rs $paidFee")),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(color: _op(Colors.black, 0.65), fontWeight: FontWeight.w900)),
-                const SizedBox(height: 6),
-                Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(color: _op(Colors.black, 0.6), fontSize: 12)),
-              ],
+          if (fineDue > 0) ...[
+            const SizedBox(height: 8),
+            _Pill(label: "Fine Due", value: "Rs $fineDue", danger: true),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onPay,
+              icon: const Icon(Icons.payments_rounded),
+              label: const Text("Pay Now"),
             ),
           ),
         ],
       ),
     );
   }
-
-  Color _op(Color c, double o) => c.withAlpha((o * 255).round());
 }
 
-class _ActionTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
+class _Pill extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool danger;
+  const _Pill({required this.label, required this.value, this.danger = false});
 
-  const _ActionTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.onTap,
-  });
+  @override
+  Widget build(BuildContext context) {
+    final c = danger ? Colors.redAccent : Colors.black;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: c.withAlpha(15),
+        border: Border.all(color: c.withAlpha(35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, color: c.withAlpha(160), fontWeight: FontWeight.w700)),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickGrid extends StatelessWidget {
+  final VoidCallback onPay;
+  final VoidCallback onHistory;
+  final VoidCallback onRefresh;
+
+  const _QuickGrid({required this.onPay, required this.onHistory, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Quick Actions", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(child: _ActionCard(icon: Icons.qr_code_scanner_rounded, label: "Pay", onTap: onPay)),
+            const SizedBox(width: 8),
+            Expanded(child: _ActionCard(icon: Icons.history_rounded, label: "History", onTap: onHistory)),
+            const SizedBox(width: 8),
+            Expanded(child: _ActionCard(icon: Icons.sync_rounded, label: "Refresh", onTap: onRefresh)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _ActionCard({required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(14),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          color: Colors.white,
-          border: Border.all(color: _op(Colors.black, 0.06)),
+          borderRadius: BorderRadius.circular(14),
+          color: Theme.of(context).cardColor,
+          border: Border.all(color: Colors.black.withAlpha(16)),
         ),
-        child: Row(
+        child: Column(
           children: [
-            Container(
-              height: 46,
-              width: 46,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: _op(color, 0.12),
-              ),
-              child: Icon(icon, color: color),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: TextStyle(color: _op(Colors.black, 0.6), fontSize: 12)),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded),
+            Icon(icon),
+            const SizedBox(height: 6),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
           ],
         ),
       ),
     );
   }
-
-  Color _op(Color c, double o) => c.withAlpha((o * 255).round());
 }
 
-class _ErrorCard extends StatelessWidget {
+class _SemesterCard extends StatelessWidget {
+  final String title;
+  final int paid;
+  final int pending;
+  final int fine;
+
+  const _SemesterCard({required this.title, required this.paid, required this.pending, required this.fine});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: Theme.of(context).cardColor,
+        border: Border.all(color: Colors.black.withAlpha(16)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+          const SizedBox(height: 3),
+          Text("Paid Rs $paid  •  Pending Rs $pending", style: const TextStyle(fontSize: 12)),
+          if (fine > 0) Text("Fine Rs $fine", style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoadingShell extends StatelessWidget {
+  const _LoadingShell({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        _ShimmerBox(height: 190),
+        SizedBox(height: 10),
+        _ShimmerBox(height: 66),
+      ],
+    );
+  }
+}
+
+class _ShimmerBox extends StatelessWidget {
+  final double height;
+  const _ShimmerBox({required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.black.withAlpha(14),
+      ),
+    );
+  }
+}
+
+class _ErrorShell extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
-
-  const _ErrorCard({required this.message, required this.onRetry});
+  const _ErrorShell({super.key, required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white,
-        border: Border.all(color: _op(Colors.black, 0.06)),
+        borderRadius: BorderRadius.circular(20),
+        color: Theme.of(context).cardColor,
+        border: Border.all(color: Colors.black.withAlpha(16)),
       ),
       child: Column(
         children: [
-          const Icon(Icons.error_outline_rounded, size: 42),
-          const SizedBox(height: 10),
+          const Icon(Icons.error_outline_rounded, size: 34),
+          const SizedBox(height: 8),
           Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text("Retry"),
-          ),
+          const SizedBox(height: 10),
+          ElevatedButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh), label: const Text("Retry")),
         ],
       ),
     );
   }
-
-  Color _op(Color c, double o) => c.withAlpha((o * 255).round());
 }

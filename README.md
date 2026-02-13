@@ -1,16 +1,48 @@
-# college_fee_app_fresh
+# College Fee Wallet
 
-A new Flutter project.
+Flutter app + Node/Express backend for student fee management.
 
-## Getting Started
+## Run locally (ngrok/dev)
 
-This project is a starting point for a Flutter application.
+1. Backend:
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-A few resources to get you started if this is your first Flutter project:
+2. Flutter:
+```bash
+flutter pub get
+flutter run -d <device_id>
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Deploy backend to Render
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+This repo includes `render.yaml` for one-click Blueprint deploy.
+
+### Option A: Blueprint deploy
+1. Push repo to GitHub.
+2. In Render, create new Blueprint and select this repo.
+3. Render will create:
+- Web service `college-fee-wallet-api`
+- Postgres database `college-fee-wallet-db`
+4. Set `JWT_SECRET` in Render dashboard.
+
+### Option B: Manual service deploy
+- Root dir: `backend`
+- Build command: `npm install && npm run render-build`
+- Start command: `npm start`
+- Env:
+  - `DATABASE_URL=<render postgres url>`
+  - `JWT_SECRET=<strong secret>`
+  - `NODE_ENV=production`
+
+## Point Flutter app to Render backend
+
+Run Flutter with:
+```bash
+flutter run -d <device_id> --dart-define=APP_ENV=prod --dart-define=PROD_BASE_URL=https://<your-render-service>.onrender.com
+```
+
+You can also edit defaults in `lib/core/constants/app_constants.dart`.

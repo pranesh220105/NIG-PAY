@@ -61,7 +61,7 @@ class _AdminCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
           color: Colors.white,
-          border: Border.all(color: Colors.black.withOpacity(0.06)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
         ),
         child: Row(
           children: [
@@ -70,7 +70,7 @@ class _AdminCard extends StatelessWidget {
               width: 50,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
-                color: cs.primary.withOpacity(0.12),
+                color: cs.primary.withValues(alpha: 0.12),
               ),
               child: Icon(icon, color: cs.primary),
             ),
@@ -81,7 +81,7 @@ class _AdminCard extends StatelessWidget {
                 children: [
                   Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 12)),
+                  Text(subtitle, style: TextStyle(color: Colors.black.withValues(alpha: 0.6), fontSize: 12)),
                 ],
               ),
             ),
@@ -92,3 +92,4 @@ class _AdminCard extends StatelessWidget {
     );
   }
 }
+

@@ -1,83 +1,110 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import 'core/repositories/student_repository.dart';
+import 'core/services/api_service.dart';
 import 'core/services/session_service.dart';
+import 'features/dashboard/viewmodels/student_vm.dart';
 import 'features/auth/login_screen.dart';
-import 'features/dashboard/student_shell.dart';
-import 'features/dashboard/admin_shell.dart';
 
-class FeeWalletApp extends StatelessWidget {
+class FeeWalletApp extends StatefulWidget {
   const FeeWalletApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "College Fee Wallet",
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF4F46E5),
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF6F7FB),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: _op(Colors.black, 0.08)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: _op(Colors.black, 0.08)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: _op(Colors.black, 0.25)),
-          ),
-        ),
-      ),
-      home: const _Bootstrap(),
-    );
-  }
-
-  // replaces deprecated withOpacity()
-  static Color _op(Color c, double opacity) => c.withAlpha((opacity * 255).round());
+  State<FeeWalletApp> createState() => _FeeWalletAppState();
 }
 
-class _Bootstrap extends StatefulWidget {
-  const _Bootstrap();
-
-  @override
-  State<_Bootstrap> createState() => _BootstrapState();
-}
-
-class _BootstrapState extends State<_Bootstrap> {
-  bool loading = true;
-  String? role;
+class _FeeWalletAppState extends State<FeeWalletApp> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  bool _navigatingToLogin = false;
 
   @override
   void initState() {
     super.initState();
-    _loadSession();
+    ApiService.onUnauthorized = _handleUnauthorized;
   }
 
-  Future<void> _loadSession() async {
-    final r = await SessionService.getRole();
-    setState(() {
-      role = r;
-      loading = false;
-    });
+  @override
+  void dispose() {
+    ApiService.onUnauthorized = null;
+    super.dispose();
+  }
+
+  Future<void> _handleUnauthorized() async {
+    if (_navigatingToLogin) return;
+    _navigatingToLogin = true;
+    await SessionService.clear();
+    final nav = _navigatorKey.currentState;
+    if (nav != null) {
+      nav.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
+    }
+    _navigatingToLogin = false;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (role == "ADMIN") return const AdminShell();
-    if (role == "STUDENT") return const StudentShell();
-    return const LoginScreen();
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<StudentVm>(
+          create: (_) => StudentVm(StudentRepository()),
+        ),
+      ],
+      child: MaterialApp(
+        navigatorKey: _navigatorKey,
+        title: "College Fee Wallet",
+        debugShowCheckedModeBanner: false,
+        themeMode: ThemeMode.system,
+        themeAnimationDuration: const Duration(milliseconds: 300),
+        themeAnimationCurve: Curves.easeOutCubic,
+        theme: _buildTheme(Brightness.light),
+        darkTheme: _buildTheme(Brightness.dark),
+        home: const LoginScreen(),
+      ),
+    );
   }
+
+  ThemeData _buildTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final base = ThemeData(
+      useMaterial3: true,
+      colorSchemeSeed: const Color(0xFF00897B),
+      brightness: brightness,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+    );
+
+    return base.copyWith(
+      scaffoldBackgroundColor: isDark ? const Color(0xFF0E1116) : const Color(0xFFF4F7FB),
+      cardTheme: CardThemeData(
+        color: isDark ? const Color(0xFF151A22) : Colors.white,
+        elevation: 0,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: isDark ? const Color(0xFF1A202A) : Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: _op(Colors.black, isDark ? 0.35 : 0.08)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: _op(Colors.black, isDark ? 0.35 : 0.08)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: _op(base.colorScheme.primary, 0.8)),
+        ),
+      ),
+    );
+  }
+
+  static Color _op(Color c, double opacity) => c.withAlpha((opacity * 255).round());
 }

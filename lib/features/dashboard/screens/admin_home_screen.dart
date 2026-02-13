@@ -1,9 +1,9 @@
-// lib/features/dashboard/screens/admin_home_screen.dart
-
 import 'package:flutter/material.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 import '../admin/admin_add_fee_screen.dart';
+import '../admin/admin_controls_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -22,10 +22,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       lastMsg = null;
     });
     try {
-      // Optional: if your backend has an admin dashboard endpoint later
-      // For now just do a safe call or remove this.
       await ApiService.get(AppConstants.studentDashboard, auth: true);
-      setState(() => lastMsg = "Server connected ✅");
+      setState(() => lastMsg = "Server connected");
     } catch (e) {
       setState(() => lastMsg = e.toString().replaceFirst("Exception: ", ""));
     } finally {
@@ -44,18 +42,16 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           children: [
             _AdminHeader(colorScheme: cs),
             const SizedBox(height: 14),
-
             if (lastMsg != null)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   border: Border.all(color: _op(Colors.black, 0.06)),
                 ),
                 child: Text(lastMsg!, style: TextStyle(color: _op(Colors.black, 0.75))),
               ),
-
             const SizedBox(height: 14),
             Text(
               "Admin Actions",
@@ -66,7 +62,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-
             _AdminActionTile(
               icon: Icons.add_card_rounded,
               title: "Add Fee",
@@ -83,11 +78,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             _AdminActionTile(
               icon: Icons.manage_accounts_rounded,
               title: "Manage Students",
-              subtitle: "View students and status",
+              subtitle: "Create students and manage dues",
               color: cs.secondary,
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Manage students screen next ✅")),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminControlsScreen()),
                 );
               },
             ),
@@ -95,10 +91,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             _AdminActionTile(
               icon: Icons.cloud_done_rounded,
               title: "Test Server Connection",
-              subtitle: "Ping backend (ngrok)",
+              subtitle: "Ping backend",
               color: cs.tertiary,
               onTap: loading ? () {} : _ping,
-              trailing: loading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : null,
+              trailing: loading
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : null,
             ),
           ],
         ),
@@ -125,7 +123,7 @@ class _AdminHeader extends StatelessWidget {
           colors: [
             _op(colorScheme.primary, 0.20),
             _op(colorScheme.primaryContainer, 0.25),
-            Colors.white,
+            Theme.of(context).cardColor,
           ],
         ),
         border: Border.all(color: _op(Colors.black, 0.06)),
@@ -148,8 +146,7 @@ class _AdminHeader extends StatelessWidget {
               children: [
                 const Text("Admin Dashboard", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
-                Text("Manage fee records & students",
-                    style: TextStyle(color: _op(Colors.black, 0.6), fontSize: 12)),
+                Text("Manage fee records and students", style: TextStyle(color: _op(Colors.black, 0.6), fontSize: 12)),
               ],
             ),
           ),
@@ -187,7 +184,7 @@ class _AdminActionTile extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           border: Border.all(color: _op(Colors.black, 0.06)),
         ),
         child: Row(

@@ -38,7 +38,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
-                side: BorderSide(color: Colors.black.withOpacity(0.06)),
+                side: BorderSide(color: Colors.black.withValues(alpha: 0.06)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -49,7 +49,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                       width: 54,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                       ),
                       child: const Icon(Icons.person_rounded),
                     ),
@@ -60,7 +60,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                         children: [
                           const Text("Student", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
                           const SizedBox(height: 4),
-                          Text(email, style: TextStyle(color: Colors.black.withOpacity(0.65))),
+                          Text(email, style: TextStyle(color: Colors.black.withValues(alpha: 0.65))),
                         ],
                       ),
                     ),
@@ -74,3 +74,4 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     );
   }
 }
+
