@@ -101,6 +101,48 @@ async function listStudents(req, res) {
   }
 }
 
+async function getAdminOverview(req, res) {
+  try {
+    const [studentCount, paidAggregate, recentPaidFees] = await Promise.all([
+      prisma.user.count({ where: { role: "STUDENT" } }),
+      prisma.fee.aggregate({
+        where: { status: "PAID" },
+        _sum: { amount: true },
+        _count: { id: true },
+      }),
+      prisma.fee.findMany({
+        where: { status: "PAID" },
+        orderBy: { updatedAt: "desc" },
+        take: 8,
+        include: {
+          user: {
+            select: { email: true },
+          },
+        },
+      }),
+    ]);
+
+    return res.json({
+      summary: {
+        studentCount,
+        collectedAmount: Number(paidAggregate._sum.amount || 0),
+        paidEntries: Number(paidAggregate._count.id || 0),
+      },
+      recentPayments: recentPaidFees.map((fee) => ({
+        id: fee.id,
+        title: fee.title,
+        amount: fee.amount,
+        status: fee.status,
+        updatedAt: fee.updatedAt,
+        studentEmail: fee.user?.email || "Unknown",
+      })),
+    });
+  } catch (e) {
+    console.log("getAdminOverview error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
 async function setSemesterFee(req, res) {
   try {
     const { studentEmail, semester, amount, dueDate, fineAmount, feeType, feeLabel } = req.body;
@@ -263,4 +305,11 @@ async function markFee(req, res) {
   }
 }
 
-module.exports = { createStudent, listStudents, setSemesterFee, assignFeeToStudents, markFee };
+module.exports = {
+  createStudent,
+  listStudents,
+  getAdminOverview,
+  setSemesterFee,
+  assignFeeToStudents,
+  markFee,
+};

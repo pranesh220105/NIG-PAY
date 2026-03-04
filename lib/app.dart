@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/repositories/student_repository.dart';
+import 'core/state/theme_controller.dart';
 import 'core/services/api_service.dart';
 import 'core/services/session_service.dart';
 import 'features/dashboard/viewmodels/student_vm.dart';
@@ -17,11 +18,13 @@ class FeeWalletApp extends StatefulWidget {
 class _FeeWalletAppState extends State<FeeWalletApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   bool _navigatingToLogin = false;
+  final ThemeController _themeController = ThemeController();
 
   @override
   void initState() {
     super.initState();
     ApiService.onUnauthorized = _handleUnauthorized;
+    _themeController.load();
   }
 
   @override
@@ -51,17 +54,22 @@ class _FeeWalletAppState extends State<FeeWalletApp> {
         ChangeNotifierProvider<StudentVm>(
           create: (_) => StudentVm(StudentRepository()),
         ),
+        ChangeNotifierProvider<ThemeController>.value(
+          value: _themeController,
+        ),
       ],
-      child: MaterialApp(
-        navigatorKey: _navigatorKey,
-        title: "College Fee Wallet",
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.system,
-        themeAnimationDuration: const Duration(milliseconds: 300),
-        themeAnimationCurve: Curves.easeOutCubic,
-        theme: _buildTheme(Brightness.light),
-        darkTheme: _buildTheme(Brightness.dark),
-        home: const LoginScreen(),
+      child: Consumer<ThemeController>(
+        builder: (context, themeController, _) => MaterialApp(
+          navigatorKey: _navigatorKey,
+          title: "College Fee Wallet",
+          debugShowCheckedModeBanner: false,
+          themeMode: themeController.mode,
+          themeAnimationDuration: const Duration(milliseconds: 300),
+          themeAnimationCurve: Curves.easeOutCubic,
+          theme: _buildTheme(Brightness.light),
+          darkTheme: _buildTheme(Brightness.dark),
+          home: const LoginScreen(),
+        ),
       ),
     );
   }
@@ -81,6 +89,7 @@ class _FeeWalletAppState extends State<FeeWalletApp> {
       useMaterial3: true,
       colorScheme: scheme,
       brightness: brightness,
+      fontFamily: "sans-serif",
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: ZoomPageTransitionsBuilder(),
@@ -91,7 +100,7 @@ class _FeeWalletAppState extends State<FeeWalletApp> {
     );
 
     return base.copyWith(
-      scaffoldBackgroundColor: isDark ? const Color(0xFF09111F) : const Color(0xFFF3F8FF),
+      scaffoldBackgroundColor: isDark ? const Color(0xFF071120) : const Color(0xFFEFF5FF),
       cardTheme: CardThemeData(
         color: isDark ? const Color(0xFF111827) : Colors.white,
         elevation: 0,

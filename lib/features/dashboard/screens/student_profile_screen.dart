@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
+import '../../../core/state/theme_controller.dart';
 import '../../../core/services/session_service.dart';
 
 class StudentProfileScreen extends StatefulWidget {
@@ -99,6 +101,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final initials = email != "-" && email.isNotEmpty ? email[0].toUpperCase() : "S";
+    final themeController = context.watch<ThemeController>();
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(16),
@@ -209,6 +212,21 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          const Text("Theme", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 10),
+          SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode_rounded), label: Text("Light")),
+              ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode_rounded), label: Text("Dark")),
+              ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.settings_suggest_rounded), label: Text("System")),
+            ],
+            selected: {themeController.mode},
+            onSelectionChanged: (selection) {
+              final next = selection.first;
+              themeController.setMode(next);
+            },
           ),
           const SizedBox(height: 16),
           const Text("Preferences", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/services/auth_service.dart';
 import '../auth/login_screen.dart';
 import '../history/screens/history_screen.dart';
+import '../receipts/screens/receipts_screen.dart';
 import 'screens/student_home_screen.dart';
 import 'screens/student_profile_screen.dart';
 
@@ -34,6 +35,7 @@ class _StudentShellState extends State<StudentShell> {
     final pages = <Widget>[
       StudentHomeScreen(onOpenHistory: _openHistoryTab),
       const HistoryScreen(),
+      const ReceiptsScreen(),
       const StudentProfileScreen(),
     ];
 
@@ -62,6 +64,7 @@ class _StudentShellState extends State<StudentShell> {
           destinations: const [
             NavigationDestination(icon: Icon(Icons.dashboard_rounded), label: "Dashboard"),
             NavigationDestination(icon: Icon(Icons.receipt_long_rounded), label: "History"),
+            NavigationDestination(icon: Icon(Icons.confirmation_number_rounded), label: "Receipts"),
             NavigationDestination(icon: Icon(Icons.person_rounded), label: "Profile"),
           ],
         ),

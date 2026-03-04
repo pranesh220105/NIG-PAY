@@ -22,6 +22,7 @@ class AppConstants {
   static const String makePayment = "/api/student/pay";
 
   static const String addFee = "/api/admin/fee/add";
+  static const String adminOverview = "/api/admin/overview";
   static const String adminListStudents = "/api/admin/students";
   static const String adminCreateStudent = "/api/admin/students";
   static const String adminSetSemesterFee = "/api/admin/fee/semester";

@@ -4,6 +4,7 @@ class StorageService {
   static const String _tokenKey = "auth_token";
   static const String _roleKey = "user_role";
   static const String _emailKey = "user_email";
+  static const String _themeModeKey = "theme_mode";
 
   // ---------- TOKEN ----------
   static Future<void> saveToken(String token) async {
@@ -53,5 +54,16 @@ class StorageService {
     await prefs.remove(_tokenKey);
     await prefs.remove(_emailKey);
     await prefs.remove(_roleKey);
+    await prefs.remove(_themeModeKey);
+  }
+
+  static Future<void> saveThemeMode(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_themeModeKey, mode);
+  }
+
+  static Future<String?> getThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_themeModeKey);
   }
 }
