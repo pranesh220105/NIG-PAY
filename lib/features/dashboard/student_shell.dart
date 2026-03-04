@@ -47,14 +47,24 @@ class _StudentShellState extends State<StudentShell> {
           child: pages[index],
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (i) => setState(() => index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_rounded), label: "Dashboard"),
-          NavigationDestination(icon: Icon(Icons.receipt_long_rounded), label: "History"),
-          NavigationDestination(icon: Icon(Icons.person_rounded), label: "Profile"),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary.withAlpha(14),
+              Theme.of(context).colorScheme.secondary.withAlpha(12),
+            ],
+          ),
+        ),
+        child: NavigationBar(
+          selectedIndex: index,
+          onDestinationSelected: (i) => setState(() => index = i),
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.dashboard_rounded), label: "Dashboard"),
+            NavigationDestination(icon: Icon(Icons.receipt_long_rounded), label: "History"),
+            NavigationDestination(icon: Icon(Icons.person_rounded), label: "Profile"),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _logout,

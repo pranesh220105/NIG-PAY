@@ -24,10 +24,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   Future<void> _openPay(int pendingFee) async {
     if (pendingFee <= 0) return;
-    await Navigator.push(
+    final paid = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => PaymentScreen(pendingAmount: pendingFee)),
     );
+    if (paid == true && mounted) {
+      await context.read<StudentVm>().loadDashboard();
+    }
   }
 
   @override
@@ -61,6 +64,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             paidFee: dash.paidFee,
                             pendingFee: dash.pendingFee,
                             fineDue: dash.totalFineDue,
+                            completionRatio: dash.totalFee == 0 ? 0 : dash.paidFee / dash.totalFee,
                             onPay: () => _openPay(dash.pendingFee),
                           ),
               ),
@@ -69,6 +73,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 onPay: () => _openPay(dash.pendingFee),
                 onHistory: () => widget.onOpenHistory?.call(),
                 onRefresh: vm.loadDashboard,
+                pendingFee: dash.pendingFee,
+                fineDue: dash.totalFineDue,
               ),
               if (dash.semesterBreakdown.isNotEmpty) ...[
                 const SizedBox(height: 16),
@@ -132,6 +138,7 @@ class _BalanceShell extends StatelessWidget {
   final int paidFee;
   final int pendingFee;
   final int fineDue;
+  final double completionRatio;
   final VoidCallback onPay;
 
   const _BalanceShell({
@@ -140,6 +147,7 @@ class _BalanceShell extends StatelessWidget {
     required this.paidFee,
     required this.pendingFee,
     required this.fineDue,
+    required this.completionRatio,
     required this.onPay,
   });
 
@@ -147,23 +155,63 @@ class _BalanceShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(28),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [cs.primary.withAlpha(36), cs.tertiary.withAlpha(30), Theme.of(context).cardColor],
+          colors: [
+            cs.primary.withAlpha(44),
+            cs.tertiary.withAlpha(32),
+            Theme.of(context).cardColor,
+          ],
         ),
         border: Border.all(color: Colors.black.withAlpha(16)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Outstanding", style: TextStyle(fontWeight: FontWeight.w800)),
+          Row(
+            children: [
+              const Expanded(
+                child: Text("Outstanding", style: TextStyle(fontWeight: FontWeight.w800)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: Colors.black.withAlpha(16),
+                ),
+                child: const Text(
+                  "Academic Wallet",
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 4),
-          Text("Rs $pendingFee", style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 10),
+          Text("Rs $pendingFee", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 4),
+          Text(
+            pendingFee > 0 ? "Complete your due before the next cycle." : "All clear. No pending due right now.",
+            style: TextStyle(fontSize: 12, color: Colors.black.withAlpha(170)),
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: completionRatio.clamp(0.0, 1.0),
+              minHeight: 8,
+              backgroundColor: Colors.black.withAlpha(12),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "${(completionRatio.clamp(0.0, 1.0) * 100).round()}% fee completed",
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(child: _Pill(label: "Total", value: "Rs $totalFee")),
@@ -222,8 +270,16 @@ class _QuickGrid extends StatelessWidget {
   final VoidCallback onPay;
   final VoidCallback onHistory;
   final VoidCallback onRefresh;
+  final int pendingFee;
+  final int fineDue;
 
-  const _QuickGrid({required this.onPay, required this.onHistory, required this.onRefresh});
+  const _QuickGrid({
+    required this.onPay,
+    required this.onHistory,
+    required this.onRefresh,
+    required this.pendingFee,
+    required this.fineDue,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +295,26 @@ class _QuickGrid extends StatelessWidget {
             Expanded(child: _ActionCard(icon: Icons.history_rounded, label: "History", onTap: onHistory)),
             const SizedBox(width: 8),
             Expanded(child: _ActionCard(icon: Icons.sync_rounded, label: "Refresh", onTap: onRefresh)),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _MiniStat(
+                label: "Pending",
+                value: "Rs $pendingFee",
+                accent: Colors.orange,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _MiniStat(
+                label: "Fine Risk",
+                value: fineDue > 0 ? "Rs $fineDue" : "Low",
+                accent: fineDue > 0 ? Colors.redAccent : Colors.green,
+              ),
+            ),
           ],
         ),
       ],
@@ -286,21 +362,72 @@ class _SemesterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final total = paid + pending;
+    final ratio = total == 0 ? 0.0 : paid / total;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         color: Theme.of(context).cardColor,
         border: Border.all(color: Colors.black.withAlpha(16)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 3),
-          Text("Paid Rs $paid  •  Pending Rs $pending", style: const TextStyle(fontSize: 12)),
+          Row(
+            children: [
+              Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w900))),
+              Text(
+                "${(ratio * 100).round()}%",
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: ratio.clamp(0.0, 1.0),
+              minHeight: 7,
+              backgroundColor: Colors.black.withAlpha(10),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text("Paid Rs $paid  |  Pending Rs $pending", style: const TextStyle(fontSize: 12)),
           if (fine > 0) Text("Fine Rs $fine", style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color accent;
+
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: accent.withAlpha(18),
+        border: Border.all(color: accent.withAlpha(40)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, color: accent, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 3),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
         ],
       ),
     );

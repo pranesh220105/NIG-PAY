@@ -14,6 +14,37 @@ function stringifyFeeMeta(meta) {
   return JSON.stringify(meta);
 }
 
+function buildFeePayload({ semester, dueDate, fineAmount, feeType, feeLabel, amount, userId }) {
+  const numericAmount = Number(amount);
+  const normalizedFeeType = String(feeType || "SEMESTER_FEE").trim().toUpperCase();
+  const normalizedSemester = String(semester || "").trim();
+  const normalizedLabel = String(feeLabel || "").trim();
+  const typeTitles = {
+    SEMESTER_FEE: normalizedSemester ? `${normalizedSemester} Fee` : "Semester Fee",
+    PAPER_FEE: normalizedSemester ? `${normalizedSemester} Paper Fee` : "Paper Fee",
+    COURSE_FEE: normalizedSemester ? `${normalizedSemester} Course Fee` : "Course Fee",
+    BUS_FEE: normalizedSemester ? `${normalizedSemester} Bus Fee` : "Bus Fee",
+    HOSTEL_FEE: normalizedSemester ? `${normalizedSemester} Hostel Fee` : "Hostel Fee",
+    LIBRARY_FEE: normalizedSemester ? `${normalizedSemester} Library Fee` : "Library Fee",
+  };
+  const finalTitle = normalizedLabel || typeTitles[normalizedFeeType] || "College Fee";
+  const meta = stringifyFeeMeta({
+    semester: normalizedSemester || "General",
+    dueDate: dueDate ? String(dueDate) : null,
+    fineAmount: Number(fineAmount || 0),
+    feeType: normalizedFeeType,
+    feeLabel: finalTitle,
+  });
+
+  return {
+    userId,
+    title: finalTitle,
+    amount: numericAmount,
+    description: meta,
+    status: "PENDING",
+  };
+}
+
 async function createStudent(req, res) {
   try {
     const { email, password } = req.body;
@@ -40,11 +71,41 @@ async function createStudent(req, res) {
   }
 }
 
+async function listStudents(req, res) {
+  try {
+    const students = await prisma.user.findMany({
+      where: { role: "STUDENT" },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        _count: {
+          select: { fees: true },
+        },
+      },
+    });
+    return res.json({
+      students: students.map((student) => ({
+        id: student.id,
+        email: student.email,
+        role: student.role,
+        createdAt: student.createdAt,
+        feeCount: student._count.fees,
+      })),
+    });
+  } catch (e) {
+    console.log("listStudents error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
 async function setSemesterFee(req, res) {
   try {
-    const { studentEmail, semester, amount, dueDate, fineAmount } = req.body;
-    if (!studentEmail || !semester || amount === undefined) {
-      return res.status(400).json({ message: "studentEmail, semester, amount are required" });
+    const { studentEmail, semester, amount, dueDate, fineAmount, feeType, feeLabel } = req.body;
+    if (!studentEmail || amount === undefined) {
+      return res.status(400).json({ message: "studentEmail and amount are required" });
     }
 
     const user = await prisma.user.findUnique({ where: { email: String(studentEmail).trim() } });
@@ -57,25 +118,80 @@ async function setSemesterFee(req, res) {
       return res.status(400).json({ message: "Amount must be greater than 0" });
     }
 
-    const meta = stringifyFeeMeta({
-      semester: String(semester).trim(),
-      dueDate: dueDate ? String(dueDate) : null,
-      fineAmount: Number(fineAmount || 0),
-    });
-
     const fee = await prisma.fee.create({
-      data: {
-        userId: user.id,
-        title: `${String(semester).trim()} Fee`,
+      data: buildFeePayload({
+        semester,
+        dueDate,
+        fineAmount,
+        feeType,
+        feeLabel,
         amount: numericAmount,
-        description: meta,
-        status: "PENDING",
-      },
+        userId: user.id,
+      }),
     });
 
     return res.status(201).json({ message: "Semester fee set", fee });
   } catch (e) {
     console.log("setSemesterFee error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+async function assignFeeToStudents(req, res) {
+  try {
+    const { studentIds, applyToAll, semester, amount, dueDate, fineAmount, feeType, feeLabel } = req.body;
+
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ message: "Amount must be greater than 0" });
+    }
+
+    let users = [];
+    if (applyToAll) {
+      users = await prisma.user.findMany({
+        where: { role: "STUDENT" },
+        select: { id: true, email: true },
+      });
+    } else {
+      const ids = Array.isArray(studentIds)
+        ? studentIds.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0)
+        : [];
+      if (ids.length === 0) {
+        return res.status(400).json({ message: "Select at least one student" });
+      }
+      users = await prisma.user.findMany({
+        where: { role: "STUDENT", id: { in: ids } },
+        select: { id: true, email: true },
+      });
+    }
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: "No students found" });
+    }
+
+    const createdFees = await prisma.$transaction(
+      users.map((user) =>
+        prisma.fee.create({
+          data: buildFeePayload({
+            semester,
+            dueDate,
+            fineAmount,
+            feeType,
+            feeLabel,
+            amount: numericAmount,
+            userId: user.id,
+          }),
+        })
+      )
+    );
+
+    return res.status(201).json({
+      message: "Fee assigned successfully",
+      count: createdFees.length,
+      students: users.map((user) => user.email),
+    });
+  } catch (e) {
+    console.log("assignFeeToStudents error:", e);
     return res.status(500).json({ message: "Server error" });
   }
 }
@@ -147,4 +263,4 @@ async function markFee(req, res) {
   }
 }
 
-module.exports = { createStudent, setSemesterFee, markFee };
+module.exports = { createStudent, listStudents, setSemesterFee, assignFeeToStudents, markFee };

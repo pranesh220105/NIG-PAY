@@ -68,9 +68,18 @@ class _FeeWalletAppState extends State<FeeWalletApp> {
 
   ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
+    final scheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF1A73E8),
+      brightness: brightness,
+    ).copyWith(
+      primary: isDark ? const Color(0xFF8AB4F8) : const Color(0xFF1A73E8),
+      secondary: isDark ? const Color(0xFF7CD992) : const Color(0xFF12B76A),
+      tertiary: isDark ? const Color(0xFFFFD76A) : const Color(0xFFFFB020),
+      surface: isDark ? const Color(0xFF111827) : const Color(0xFFF7FAFF),
+    );
     final base = ThemeData(
       useMaterial3: true,
-      colorSchemeSeed: const Color(0xFF00897B),
+      colorScheme: scheme,
       brightness: brightness,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -82,14 +91,55 @@ class _FeeWalletAppState extends State<FeeWalletApp> {
     );
 
     return base.copyWith(
-      scaffoldBackgroundColor: isDark ? const Color(0xFF0E1116) : const Color(0xFFF4F7FB),
+      scaffoldBackgroundColor: isDark ? const Color(0xFF09111F) : const Color(0xFFF3F8FF),
       cardTheme: CardThemeData(
-        color: isDark ? const Color(0xFF151A22) : Colors.white,
+        color: isDark ? const Color(0xFF111827) : Colors.white,
         elevation: 0,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        foregroundColor: scheme.onSurface,
+        titleTextStyle: TextStyle(
+          color: scheme.onSurface,
+          fontSize: 20,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: isDark ? const Color(0xFF0C1627) : Colors.white,
+        indicatorColor: scheme.primary.withAlpha(isDark ? 52 : 32),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontSize: 12,
+            fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
+          ),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: scheme.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: Colors.white,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isDark ? const Color(0xFF132238) : const Color(0xFF16365F),
+        contentTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? const Color(0xFF1A202A) : Colors.white,
+        fillColor: isDark ? const Color(0xFF122033) : Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: _op(Colors.black, isDark ? 0.35 : 0.08)),

@@ -81,24 +81,61 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     }
 
+    final totalPaid = vm.payments.fold<int>(0, (sum, p) => sum + p.amount);
+    final latest = vm.payments.first;
+
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-      itemCount: vm.payments.length + 1,
+      itemCount: vm.payments.length + 2,
       itemBuilder: (context, i) {
         if (i == 0) {
-          return const Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: Text("Transactions", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Transactions", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SummaryTile(
+                        label: "Received",
+                        value: "Rs $totalPaid",
+                        accent: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _SummaryTile(
+                        label: "Latest",
+                        value: "Rs ${latest.amount}",
+                        accent: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           );
         }
-        final p = vm.payments[i - 1];
+        if (i == 1) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              "Recent settlements",
+              style: TextStyle(fontSize: 12, color: Colors.black.withAlpha(145), fontWeight: FontWeight.w700),
+            ),
+          );
+        }
+        final p = vm.payments[i - 2];
         final d = p.updatedAt;
         final date = "${d.day.toString().padLeft(2, "0")} ${_m(d.month)} ${d.year}";
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             color: Theme.of(context).cardColor,
             border: Border.all(color: Colors.black.withAlpha(16)),
           ),
@@ -108,7 +145,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 height: 42,
                 width: 42,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   color: Colors.green.withAlpha(25),
                 ),
                 child: const Icon(Icons.check_rounded, color: Colors.green),
@@ -124,7 +161,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ],
                 ),
               ),
-              Text("Rs ${p.amount}", style: const TextStyle(fontWeight: FontWeight.w900)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text("Rs ${p.amount}", style: const TextStyle(fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      color: Colors.green.withAlpha(18),
+                    ),
+                    child: const Text(
+                      "PAID",
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.green),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         );
@@ -148,6 +202,38 @@ class _SkeletonRow extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: Colors.black.withAlpha(16),
+      ),
+    );
+  }
+}
+
+class _SummaryTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color accent;
+
+  const _SummaryTile({
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: accent.withAlpha(18),
+        border: Border.all(color: accent.withAlpha(36)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, color: accent, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
+        ],
       ),
     );
   }
