@@ -31,7 +31,7 @@ function isOverdue(dueDate) {
 exports.getStudentDashboard = async (req, res) => {
   try {
     const fees = await prisma.fee.findMany({
-      where: { userId: Number(req.user.id) },
+      where: { userId: Number(req.user.id), isActive: true },
       select: { amount: true, status: true, description: true },
     });
 
@@ -111,7 +111,7 @@ exports.makePayment = async (req, res) => {
 
     const userId = Number(req.user.id);
     const pendingFees = await prisma.fee.findMany({
-      where: { userId, status: "PENDING" },
+      where: { userId, status: "PENDING", isActive: true },
       orderBy: { createdAt: "asc" },
     });
 
@@ -157,7 +157,7 @@ exports.makePayment = async (req, res) => {
     });
 
     const fees = await prisma.fee.findMany({
-      where: { userId },
+      where: { userId, isActive: true },
       select: { amount: true, status: true },
     });
     const totalFee = fees.reduce((sum, fee) => sum + Number(fee.amount || 0), 0);

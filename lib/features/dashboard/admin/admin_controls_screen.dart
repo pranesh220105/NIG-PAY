@@ -11,8 +11,6 @@ class AdminControlsScreen extends StatefulWidget {
 }
 
 class _AdminControlsScreenState extends State<AdminControlsScreen> {
-  final _studentEmail = TextEditingController();
-  final _studentPassword = TextEditingController(text: "123456");
   final _semester = TextEditingController();
   final _amount = TextEditingController();
   final _dueDate = TextEditingController();
@@ -46,8 +44,6 @@ class _AdminControlsScreenState extends State<AdminControlsScreen> {
 
   @override
   void dispose() {
-    _studentEmail.dispose();
-    _studentPassword.dispose();
     _semester.dispose();
     _amount.dispose();
     _dueDate.dispose();
@@ -119,21 +115,6 @@ class _AdminControlsScreenState extends State<AdminControlsScreen> {
       return "Selected: ${student.email}";
     }
     return "${_selectedStudentIds.length} students selected";
-  }
-
-  Future<void> _createStudent() async {
-    await _call(() async {
-      await ApiService.post(
-        AppConstants.adminCreateStudent,
-        auth: true,
-        body: {
-          "email": _studentEmail.text.trim(),
-          "password": _studentPassword.text.trim(),
-        },
-      );
-      await _loadStudents();
-      return "Student created";
-    });
   }
 
   Future<void> _assignFee() async {
@@ -334,28 +315,6 @@ class _AdminControlsScreenState extends State<AdminControlsScreen> {
                   }),
               ],
             ),
-            const SizedBox(height: 12),
-            _SectionCard(
-              title: "Create Student",
-              subtitle: "Provision a student account with a temporary password.",
-              children: [
-                TextField(
-                  controller: _studentEmail,
-                  decoration: const InputDecoration(labelText: "Student email"),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _studentPassword,
-                  decoration: const InputDecoration(labelText: "Temporary password"),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: _loading ? null : _createStudent,
-                  child: const Text("Create Student"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
             _SectionCard(
               title: "Assign Fee",
               subtitle: "Add semester, paper, course, bus, hostel, or library fee to selected students or all.",

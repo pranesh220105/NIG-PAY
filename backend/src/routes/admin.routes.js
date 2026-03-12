@@ -5,7 +5,9 @@ const {
   createStudent,
   listStudents,
   deleteStudent,
+  getAdminReceipts,
   getAdminOverview,
+  resetStudentLedger,
   setSemesterFee,
   assignFeeToStudents,
   markFee,
@@ -13,9 +15,11 @@ const {
 
 router.post("/fee/add", auth, requireRole("ADMIN"), addFeeByStudentEmail);
 router.get("/overview", auth, requireRole("ADMIN"), getAdminOverview);
+router.get("/receipts", auth, requireRole("ADMIN"), getAdminReceipts);
 router.get("/students", auth, requireRole("ADMIN"), listStudents);
 router.post("/students", auth, requireRole("ADMIN"), createStudent);
 router.delete("/students/:id", auth, requireRole("ADMIN"), deleteStudent);
+router.post("/students/:id/reset-ledger", auth, requireRole("ADMIN"), resetStudentLedger);
 router.post("/fee/semester", auth, requireRole("ADMIN"), setSemesterFee);
 router.post("/fee/bulk", auth, requireRole("ADMIN"), assignFeeToStudents);
 router.post("/fee/mark", auth, requireRole("ADMIN"), markFee);

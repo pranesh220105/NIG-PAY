@@ -29,6 +29,7 @@ model Fee {
   title       String
   amount      Int
   description String?
+  isActive    Boolean  @default(true)
   status      String   @default("PENDING") // PENDING / PAID
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

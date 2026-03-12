@@ -81,6 +81,10 @@ async function listStudents(req, res) {
         email: true,
         role: true,
         createdAt: true,
+        fees: {
+          where: { isActive: true },
+          select: { amount: true, status: true },
+        },
         _count: {
           select: { fees: true },
         },
@@ -93,6 +97,9 @@ async function listStudents(req, res) {
         role: student.role,
         createdAt: student.createdAt,
         feeCount: student._count.fees,
+        activePendingAmount: student.fees
+          .filter((fee) => String(fee.status).toUpperCase() !== "PAID")
+          .reduce((sum, fee) => sum + Number(fee.amount || 0), 0),
       })),
     });
   } catch (e) {
@@ -171,6 +178,65 @@ async function getAdminOverview(req, res) {
     });
   } catch (e) {
     console.log("getAdminOverview error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+async function getAdminReceipts(req, res) {
+  try {
+    const receipts = await prisma.fee.findMany({
+      where: { status: "PAID" },
+      orderBy: { updatedAt: "desc" },
+      include: {
+        user: {
+          select: { email: true },
+        },
+      },
+    });
+
+    return res.json({
+      receipts: receipts.map((fee) => ({
+        id: fee.id,
+        title: fee.title,
+        amount: fee.amount,
+        status: fee.status,
+        updatedAt: fee.updatedAt,
+        studentEmail: fee.user?.email || "Unknown",
+      })),
+    });
+  } catch (e) {
+    console.log("getAdminReceipts error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+async function resetStudentLedger(req, res) {
+  try {
+    const studentId = Number(req.params.id);
+    if (!Number.isFinite(studentId) || studentId <= 0) {
+      return res.status(400).json({ message: "Valid student id is required" });
+    }
+
+    const student = await prisma.user.findFirst({
+      where: { id: studentId, role: "STUDENT" },
+      select: { id: true, email: true },
+    });
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const result = await prisma.fee.updateMany({
+      where: { userId: studentId, isActive: true },
+      data: { isActive: false },
+    });
+
+    return res.json({
+      message: "Student current fee cycle reset",
+      student,
+      archivedRows: result.count,
+    });
+  } catch (e) {
+    console.log("resetStudentLedger error:", e);
     return res.status(500).json({ message: "Server error" });
   }
 }
@@ -341,7 +407,9 @@ module.exports = {
   createStudent,
   listStudents,
   deleteStudent,
+  getAdminReceipts,
   getAdminOverview,
+  resetStudentLedger,
   setSemesterFee,
   assignFeeToStudents,
   markFee,

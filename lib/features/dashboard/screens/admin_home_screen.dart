@@ -4,6 +4,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 import '../admin/admin_add_fee_screen.dart';
 import '../admin/admin_controls_screen.dart';
+import '../admin/admin_receipts_screen.dart';
+import '../admin/admin_students_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -85,6 +87,21 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 children: [
                   Expanded(
                     child: _ActionCard(
+                      icon: Icons.people_alt_rounded,
+                      title: "Students",
+                      subtitle: "Create and delete",
+                      color: const Color(0xFF5B2BE0),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminStudentsScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ActionCard(
                       icon: Icons.add_card_rounded,
                       title: "Add Fee",
                       subtitle: "Single student",
@@ -97,22 +114,33 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _ActionCard(
-                      icon: Icons.groups_rounded,
-                      title: "Manage",
-                      subtitle: "Students + bulk fee",
-                      color: cs.secondary,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const AdminControlsScreen()),
-                        );
-                      },
-                    ),
-                  ),
                 ],
+              ),
+              const SizedBox(height: 10),
+              _ActionCard(
+                icon: Icons.tune_rounded,
+                title: "Fee Controls",
+                subtitle: "Bulk assign and mark paid",
+                color: cs.secondary,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminControlsScreen()),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              _ActionCard(
+                icon: Icons.receipt_long_rounded,
+                title: "Receipts",
+                subtitle: "Print and share paid entries",
+                color: const Color(0xFF00A86B),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminReceiptsScreen()),
+                  );
+                },
               ),
               const SizedBox(height: 18),
               const Text(
