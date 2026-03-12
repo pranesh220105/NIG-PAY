@@ -25,6 +25,7 @@ class AppConstants {
   static const String adminOverview = "/api/admin/overview";
   static const String adminListStudents = "/api/admin/students";
   static const String adminCreateStudent = "/api/admin/students";
+  static const String adminDeleteStudent = "/api/admin/students";
   static const String adminSetSemesterFee = "/api/admin/fee/semester";
   static const String adminBulkAssignFee = "/api/admin/fee/bulk";
   static const String adminMarkFee = "/api/admin/fee/mark";

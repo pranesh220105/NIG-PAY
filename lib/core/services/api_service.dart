@@ -47,6 +47,22 @@ class ApiService {
     });
   }
 
+  static Future<Map<String, dynamic>> delete(
+    String path, {
+    bool auth = false,
+  }) async {
+    return _requestWithRetry(() async {
+      final headers = await _headers(auth: auth);
+      final res = await http
+          .delete(
+            AppConstants.uri(path),
+            headers: headers,
+          )
+          .timeout(_timeout);
+      return _handle(res);
+    });
+  }
+
   static Future<Map<String, String>> _headers({required bool auth}) async {
     final h = <String, String>{
       "Content-Type": "application/json",

@@ -158,8 +158,8 @@ class _AdminHero extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             colorScheme.primary,
-            const Color(0xFF0D47A1),
-            colorScheme.secondary.withAlpha(220),
+            const Color(0xFF4120B5),
+            colorScheme.secondary,
           ],
         ),
       ),
@@ -281,7 +281,7 @@ class _AdminStatsRow extends StatelessWidget {
           child: _StatCard(
             label: "Paid Entries",
             value: paidEntries.toString(),
-            accent: Colors.green,
+            accent: const Color(0xFF6D46FF),
           ),
         ),
         const SizedBox(width: 10),
@@ -289,7 +289,7 @@ class _AdminStatsRow extends StatelessWidget {
           child: _StatCard(
             label: "Students",
             value: studentCount.toString(),
-            accent: Colors.blue,
+            accent: const Color(0xFF5B2BE0),
           ),
         ),
         const SizedBox(width: 10),
@@ -297,7 +297,7 @@ class _AdminStatsRow extends StatelessWidget {
           child: _StatCard(
             label: "Collected",
             value: "Rs $collectedAmount",
-            accent: Colors.orange,
+            accent: const Color(0xFF8D6BFF),
           ),
         ),
       ],
@@ -414,6 +414,7 @@ class _RecentPaymentTile extends StatelessWidget {
               color: Colors.green.withAlpha(16),
             ),
             child: const Icon(Icons.check_circle_rounded, color: Colors.green),
+            
           ),
           const SizedBox(width: 12),
           Expanded(

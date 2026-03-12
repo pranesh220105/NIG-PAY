@@ -193,6 +193,40 @@ class _AdminControlsScreenState extends State<AdminControlsScreen> {
     });
   }
 
+  Future<void> _deleteStudent(_StudentItem student) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete student"),
+        content: Text(
+          "Delete ${student.email} and all linked fee records? This cannot be undone.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    await _call(() async {
+      final res = await ApiService.delete(
+        "${AppConstants.adminDeleteStudent}/${student.id}",
+        auth: true,
+      );
+      _selectedStudentIds.remove(student.id);
+      await _loadStudents();
+      return res["message"]?.toString() ?? "Student deleted";
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedOption = _feeOptions.firstWhere(
@@ -267,23 +301,35 @@ class _AdminControlsScreenState extends State<AdminControlsScreen> {
                 else
                   ..._students.map((student) {
                     final selected = _selectedStudentIds.contains(student.id);
-                    return CheckboxListTile(
-                      value: _applyToAll ? true : selected,
-                      onChanged: _applyToAll || _loading
-                          ? null
-                          : (value) {
-                              setState(() {
-                                if (value ?? false) {
-                                  _selectedStudentIds.add(student.id);
-                                } else {
-                                  _selectedStudentIds.remove(student.id);
-                                }
-                              });
-                            },
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(student.email, style: const TextStyle(fontWeight: FontWeight.w800)),
-                      subtitle: Text("Fees created: ${student.feeCount}"),
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: CheckboxListTile(
+                            value: _applyToAll ? true : selected,
+                            onChanged: _applyToAll || _loading
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      if (value ?? false) {
+                                        _selectedStudentIds.add(student.id);
+                                      } else {
+                                        _selectedStudentIds.remove(student.id);
+                                      }
+                                    });
+                                  },
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(student.email, style: const TextStyle(fontWeight: FontWeight.w800)),
+                            subtitle: Text("Fees created: ${student.feeCount}"),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: "Delete student",
+                          onPressed: _loading ? null : () => _deleteStudent(student),
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          color: Colors.red,
+                        ),
+                      ],
                     );
                   }),
               ],

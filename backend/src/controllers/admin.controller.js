@@ -101,6 +101,38 @@ async function listStudents(req, res) {
   }
 }
 
+async function deleteStudent(req, res) {
+  try {
+    const studentId = Number(req.params.id);
+    if (!Number.isFinite(studentId) || studentId <= 0) {
+      return res.status(400).json({ message: "Valid student id is required" });
+    }
+
+    const student = await prisma.user.findFirst({
+      where: { id: studentId, role: "STUDENT" },
+      select: { id: true, email: true },
+    });
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    await prisma.user.delete({
+      where: { id: studentId },
+    });
+
+    return res.json({
+      message: "Student deleted",
+      student: {
+        id: student.id,
+        email: student.email,
+      },
+    });
+  } catch (e) {
+    console.log("deleteStudent error:", e);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
 async function getAdminOverview(req, res) {
   try {
     const [studentCount, paidAggregate, recentPaidFees] = await Promise.all([
@@ -308,6 +340,7 @@ async function markFee(req, res) {
 module.exports = {
   createStudent,
   listStudents,
+  deleteStudent,
   getAdminOverview,
   setSemesterFee,
   assignFeeToStudents,
